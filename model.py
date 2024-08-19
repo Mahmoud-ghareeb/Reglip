@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from torch.nn import functional as F
 from config import SiglipConfiguration
 
 
@@ -33,7 +34,6 @@ class SiglipVisionEmbedding(nn.Module):
     def forward(self, pixel_values):
 
         B, _, _, _ = pixel_values.shape
-
         # (B, C, H, W) => (B, D, H, W)
         x = self.patch_embedding(pixel_values)
         # (B, D, H, W) => (B, D, L)
@@ -46,19 +46,84 @@ class SiglipVisionEmbedding(nn.Module):
         return x
 
 
+class SiglipAttention(nn.Module):
+    def __init__(self, config: SiglipConfiguration):
+        super().__init__()
+
+        self.q = nn.Linear(in_features=config.hidden_size,
+                           out_features=config.hidden_size, bias=False)
+        self.k = nn.Linear(in_features=config.hidden_size,
+                           out_features=config.hidden_size, bias=False)
+        self.v = nn.Linear(in_features=config.hidden_size,
+                           out_features=config.hidden_size, bias=False)
+
+        self.dk = (config.hidden_size // config.num_atttention_heads) ** -0.5
+
+    def forward(self, x):
+
+        B, L, D = x.shape
+        print(x.shape)
+
+        # (B, L, D) => (B, H, L, K)
+        Q = self.q(x).view(
+            B, L, config.num_atttention_heads, -1).transpose(1, 2)
+        # (B, L, D) => (B, H, L, K)
+        K = self.k(x).view(
+            B, L, config.num_atttention_heads, -1).transpose(1, 2)
+        # (B, L, D) => (B, H, L, K)
+        V = self.v(x).view(
+            B, L, config.num_atttention_heads, -1).transpose(1, 2)
+
+        similarty = Q @ K.transpose(-2, -1) * self.dk
+        W = F.softmax(similarty, dim=-1)
+
+        x = W @ V
+
+        print(x.shape)
+        x = x.transpose(1, 2).contiguous().view(B, L, D)
+        print(x.shape)
+        return x
+
+
+class SiglipEncoder(nn.Module):
+    def __init__(self, config: SiglipConfiguration):
+        super().__init__()
+
+        self.l1 = nn.Sequential(
+            nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps),
+            SiglipAttention(config)
+        )
+
+        # self.l2 = nn.ModuleList([
+        #     nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps),
+        #     nn.Linear(in_features=config.hidden_size,
+        #               out_features=config.intermediate_size),
+        #     nn.GELU(approximate="tanh"),
+        #     nn.Linear(in_features=config.intermediate_size,
+        #               out_features=config.hidden_size)
+        # ])
+
+    def forward(self, x):
+
+        x += self.l1(x)
+        # x += self.l2(x)
+
+        return x
+
+
 class SiglipTransformer(nn.Module):
     def __init__(self, config: SiglipConfiguration):
         super().__init__()
 
         self.embed = SiglipVisionEmbedding(config)
-        # self.encoder = SiglipEncoder(config)
+        self.encoder = SiglipEncoder(config)
         self.layer_norm = nn.LayerNorm(
             config.hidden_size, eps=config.layer_norm_eps)
 
     def forward(self, pixel_values):
 
         x = self.embed(pixel_values)
-        # x = self.encoder(x)
+        x = self.encoder(x)
         x = self.layer_norm(x)
 
         return x
@@ -83,4 +148,4 @@ if __name__ == "__main__":
     x = x.float()
     config = SiglipConfiguration()
 
-    SiglipVisionEmbedding(config)(x)
+    SiglipModel(config)(x)

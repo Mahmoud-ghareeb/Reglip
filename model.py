@@ -40,7 +40,6 @@ class ReglipVisionEmbedding(nn.Module):
         x = x.view(B, self.hidden_size, -1)
         # (B, D, L) => (B, L, D)
         x = x.transpose(-2, -1)
-        # (B, L, D) => (B, L, D)
         x += self.position_embeddings(self.position_ids)
 
         return x
@@ -57,6 +56,7 @@ class ReglipAttention(nn.Module):
         self.v = nn.Linear(in_features=config.hidden_size,
                            out_features=config.hidden_size, bias=False)
 
+        self.num_heads = config.num_atttention_heads
         self.dk = (config.hidden_size // config.num_atttention_heads) ** -0.5
 
     def forward(self, x):
@@ -65,13 +65,13 @@ class ReglipAttention(nn.Module):
 
         # (B, L, D) => (B, H, L, K)
         Q = self.q(x).view(
-            B, L, config.num_atttention_heads, -1).transpose(1, 2)
+            B, L, self.num_heads, -1).transpose(1, 2)
         # (B, L, D) => (B, H, L, K)
         K = self.k(x).view(
-            B, L, config.num_atttention_heads, -1).transpose(1, 2)
+            B, L, self.num_heads, -1).transpose(1, 2)
         # (B, L, D) => (B, H, L, K)
         V = self.v(x).view(
-            B, L, config.num_atttention_heads, -1).transpose(1, 2)
+            B, L, self.num_heads, -1).transpose(1, 2)
 
         similarty = Q @ K.transpose(-2, -1) * self.dk
         W = F.softmax(similarty, dim=-1)

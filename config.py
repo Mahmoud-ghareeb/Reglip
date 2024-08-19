@@ -11,7 +11,7 @@ class SiglipConfiguration:
         num_hidden_layer=12,
         num_attention_heads=12,
         num_channels=3,
-        image_size=16,
+        image_size=224,
         patch_size=16,
         layer_norm_eps=1e-6,
         attention_dropout=0.0,

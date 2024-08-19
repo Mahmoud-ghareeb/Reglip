@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 data/*
 !data/.gitkeep
 checkpoints/*
@@ -19,3 +20,6 @@ wandb/*
 =======
 __pycache__
 >>>>>>> 50f6249 (adding gitignore)
+=======
+__pycache__/
+>>>>>>> 46f05f3 (new: adding gitignore)

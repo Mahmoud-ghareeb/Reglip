@@ -34,7 +34,6 @@ class ReglipVisionEmbedding(nn.Module):
     def forward(self, pixel_values):
 
         B, _, _, _ = pixel_values.shape
-
         # (B, C, H, W) => (B, D, H, W)
         x = self.patch_embedding(pixel_values)
         # (B, D, H, W) => (B, D, L)

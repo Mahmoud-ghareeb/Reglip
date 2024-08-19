@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 data/*
 !data/.gitkeep
 checkpoints/*
@@ -15,3 +16,6 @@ wandb/*
 .env.development.local
 .env.test.local
 .env.production.local
+=======
+__pycache__
+>>>>>>> 50f6249 (adding gitignore)

@@ -94,19 +94,19 @@ class SiglipEncoder(nn.Module):
             SiglipAttention(config)
         )
 
-        # self.l2 = nn.ModuleList([
-        #     nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps),
-        #     nn.Linear(in_features=config.hidden_size,
-        #               out_features=config.intermediate_size),
-        #     nn.GELU(approximate="tanh"),
-        #     nn.Linear(in_features=config.intermediate_size,
-        #               out_features=config.hidden_size)
-        # ])
+        self.l2 = nn.Sequential(
+            nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps),
+            nn.Linear(in_features=config.hidden_size,
+                      out_features=config.intermediate_size),
+            nn.GELU(approximate="tanh"),
+            nn.Linear(in_features=config.intermediate_size,
+                      out_features=config.hidden_size)
+        )
 
     def forward(self, x):
 
         x += self.l1(x)
-        # x += self.l2(x)
+        x += self.l2(x)
 
         return x
 
@@ -125,6 +125,8 @@ class SiglipTransformer(nn.Module):
         x = self.embed(pixel_values)
         x = self.encoder(x)
         x = self.layer_norm(x)
+
+        print(x.shape)
 
         return x
 

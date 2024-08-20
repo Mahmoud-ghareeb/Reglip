@@ -1,12 +1,12 @@
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
-from config import SiglipConfiguration
+from config import ReglipConfiguration
 
 
-class SiglipVisionEmbedding(nn.Module):
+class ReglipVisionEmbedding(nn.Module):
 
-    def __init__(self, config: SiglipConfiguration):
+    def __init__(self, config: ReglipConfiguration):
 
         super().__init__()
 
@@ -46,8 +46,8 @@ class SiglipVisionEmbedding(nn.Module):
         return x
 
 
-class SiglipAttention(nn.Module):
-    def __init__(self, config: SiglipConfiguration):
+class ReglipAttention(nn.Module):
+    def __init__(self, config: ReglipConfiguration):
         super().__init__()
 
         self.q = nn.Linear(in_features=config.hidden_size,
@@ -84,13 +84,13 @@ class SiglipAttention(nn.Module):
         return x
 
 
-class SiglipEncoder(nn.Module):
-    def __init__(self, config: SiglipConfiguration):
+class ReglipEncoder(nn.Module):
+    def __init__(self, config: ReglipConfiguration):
         super().__init__()
 
         self.l1 = nn.Sequential(
             nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps),
-            SiglipAttention(config)
+            ReglipAttention(config)
         )
 
         self.l2 = nn.Sequential(
@@ -110,12 +110,12 @@ class SiglipEncoder(nn.Module):
         return x
 
 
-class SiglipTransformer(nn.Module):
-    def __init__(self, config: SiglipConfiguration):
+class ReglipTransformer(nn.Module):
+    def __init__(self, config: ReglipConfiguration):
         super().__init__()
 
-        self.embed = SiglipVisionEmbedding(config)
-        self.encoder = SiglipEncoder(config)
+        self.embed = ReglipVisionEmbedding(config)
+        self.encoder = ReglipEncoder(config)
         self.layer_norm = nn.LayerNorm(
             config.hidden_size, eps=config.layer_norm_eps)
 
@@ -130,12 +130,12 @@ class SiglipTransformer(nn.Module):
         return x
 
 
-class SiglipModel(nn.Module):
-    def __init__(self, config: SiglipConfiguration):
+class ReglipModel(nn.Module):
+    def __init__(self, config: ReglipConfiguration):
         super().__init__()
 
         self.config = config
-        self.vision_model = SiglipTransformer(config)
+        self.vision_model = ReglipTransformer(config)
 
     def forward(self, pixel_values):
 
@@ -147,6 +147,6 @@ if __name__ == "__main__":
 
     x = torch.empty((16, 3, 224, 224), dtype=torch.int32)
     x = x.float()
-    config = SiglipConfiguration()
+    config = ReglipConfiguration()
 
-    SiglipModel(config)(x)
+    ReglipModel(config)(x)

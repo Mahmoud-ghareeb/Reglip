@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 
-class SiglipConfiguration:
+class ReglipConfiguration:
 
     def __init__(
         self,

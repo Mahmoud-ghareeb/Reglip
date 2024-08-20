@@ -1,1 +1,1 @@
-# Siglip implementation
+# Reglip implementation

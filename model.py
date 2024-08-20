@@ -62,7 +62,6 @@ class SiglipAttention(nn.Module):
     def forward(self, x):
 
         B, L, D = x.shape
-        print(x.shape)
 
         # (B, L, D) => (B, H, L, K)
         Q = self.q(x).view(

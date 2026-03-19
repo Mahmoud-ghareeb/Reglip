@@ -1,0 +1,85 @@
+# SigLIP Training Configuration
+
+model:
+  name: "siglip"
+  pretrained_model: "google/siglip-base-patch16-224"
+  load_pretrained: true
+  
+  # Model architecture
+  text_config:
+    hidden_size: 768
+    num_hidden_layers: 12
+    num_attention_heads: 12
+    intermediate_size: 3072
+    max_position_embeddings: 64
+    vocab_size: 32000
+    projection_size: 768
+    
+  vision_config:
+    hidden_size: 768
+    num_hidden_layers: 12
+    num_attention_heads: 12
+    intermediate_size: 3072
+    image_size: 224
+    patch_size: 16
+    projection_size: 768
+
+# Training parameters
+training:
+  batch_size: 64
+  learning_rate: 0.0001  # 1e-4 as decimal to avoid any parsing issues
+  weight_decay: 0.01
+  warmup_steps: 1000
+  max_epochs: 10
+  gradient_clip_norm: 1.0
+  
+  # Optimizer
+  optimizer: "adamw"
+  scheduler: "cosine"
+  
+  # Loss function
+  loss_type: "siglip_binary"  # Binary cross-entropy loss
+
+# Data
+data:
+  dataset: "flickr30k"
+  data_root: "./data/flickr30k"
+  num_workers: 8
+  pin_memory: true
+  max_samples: null  # null for full dataset
+  
+  # Image processing
+  image_size: 224
+  augmentation: true
+  
+  # Text processing
+  max_text_length: 64
+  truncation: true
+  padding: "max_length"
+
+# Evaluation
+evaluation:
+  eval_every_n_epochs: 1
+  save_best_model: true
+  metrics:
+    - "image_to_text_retrieval"
+    - "text_to_image_retrieval" 
+    - "zero_shot_classification"
+
+# Logging and checkpointing
+logging:
+  use_wandb: false  # Set to true if you want to use Weights & Biases (requires: wandb login)
+  use_tensorboard: true  # TensorBoard logs are saved inside checkpointing.checkpoint_dir/tensorboard/
+  project_name: "siglip_vs_reglip"
+  experiment_name: "siglip_flickr30k"
+  log_every_n_steps: 100
+  
+checkpointing:
+  save_every_n_epochs: 1
+  checkpoint_dir: "./checkpoints/siglip"
+  keep_last_n_checkpoints: null  # null to keep all checkpoints
+
+# Hardware
+device: "cuda"
+mixed_precision: true
+distributed: false 

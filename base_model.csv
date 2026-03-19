@@ -1,0 +1,14 @@
+model,dataset,task,metric,value
+,flickr30k,retrieval,error,data_root not provided. Set DATA_ROOT env var or use --data_root
+,coco,retrieval,error,torch.cat(): expected a non-empty list of Tensors
+,cifar10,zero_shot,top1_accuracy,12.61
+,cifar10,zero_shot,top5_accuracy,64.09
+,cifar100,zero_shot,top1_accuracy,1.28
+,cifar100,zero_shot,top5_accuracy,7.5200000000000005
+,imagenet,zero_shot,top1_accuracy,0.422
+,imagenet,zero_shot,top5_accuracy,1.9220000000000002
+,imagenet_v2,zero_shot,top1_accuracy,0.38999999999999996
+,imagenet_v2,zero_shot,top5_accuracy,1.54
+,imagenet_real,zero_shot,top1_accuracy,0.422
+,imagenet_real,zero_shot,top5_accuracy,1.9220000000000002
+,objectnet,zero_shot,error,data_root not provided. Set OBJECTNET_ROOT env var or use --objectnet_root

@@ -1,0 +1,11 @@
+{
+  "model": "",
+  "timestamp": "2026-03-11 19:34:29",
+  "results": {
+    "imagenet": {
+      "zero_shot": {
+        "error": "Expecting value: line 1 column 1 (char 0)"
+      }
+    }
+  }
+}

@@ -1,0 +1,3 @@
+model,dataset,task,metric,value
+,imagenet,zero_shot,top1_accuracy,0.58
+,imagenet,zero_shot,top5_accuracy,1.68

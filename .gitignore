@@ -1,0 +1,17 @@
+data/*
+!data/.gitkeep
+checkpoints/*
+!checkpoints/.gitkeep
+results/*
+!results/.gitkeep
+logs/*
+!logs/.gitkeep
+experiments/*
+!experiments/.gitkeep
+wandb/*
+!wandb/.gitkeep
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local

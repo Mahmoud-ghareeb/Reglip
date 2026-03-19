@@ -1,0 +1,105 @@
+# Evaluation Configuration
+
+# Models to evaluate
+models:
+  reglip:
+    checkpoint: "./checkpoints/reglip/checkpoint_epoch_1.pth"
+    type: "reglip"
+  siglip:
+    checkpoint: "./checkpoints/siglip/best_model.pth"
+    type: "siglip"
+
+# Tasks to run
+tasks:
+  - retrieval
+  - zero_shot
+
+# Datasets
+datasets:
+  # Retrieval datasets
+  flickr30k:
+    enabled: true
+    data_root: "/home/mahmoud/RegLIP/data/flickr30k"
+    split: "test"
+    task: "retrieval"
+  
+  coco:
+    enabled: false  # Enable when COCO data is available
+    data_root: "/path/to/coco"
+    split: "test"
+    task: "retrieval"
+  
+  # Classification datasets
+  cifar10:
+    enabled: true
+    data_root: "./data"
+    split: "test"
+    task: "zero_shot"
+    download: true
+  
+  cifar100:
+    enabled: false
+    data_root: "./data"
+    split: "test"
+    task: "zero_shot"
+    download: true
+  
+  imagenet:
+    enabled: false  # Enable when ImageNet data is available
+    data_root: "/path/to/imagenet"
+    split: "val"
+    task: "zero_shot"
+  
+  imagenet_v2:
+    enabled: false
+    data_root: "/path/to/imagenetv2-matched-frequency"
+    split: "matched-frequency"
+    task: "zero_shot"
+  
+  imagenet_real:
+    enabled: false
+    data_root: "/path/to/imagenet"
+    split: "val"
+    task: "zero_shot"
+  
+  objectnet:
+    enabled: false
+    data_root: "/path/to/objectnet"
+    split: "test"
+    task: "zero_shot"
+
+# Evaluation settings
+evaluation:
+  batch_size: 64
+  device: "cuda"
+  
+  # Retrieval settings
+  retrieval:
+    k_values: [1, 5, 10]
+    compute_stats: true
+  
+  # Zero-shot settings
+  zero_shot:
+    k_values: [1, 5]
+    use_ensemble: true
+    templates:
+      - "a photo of a {}"
+      - "a picture of a {}"
+      - "an image of a {}"
+      - "{}"
+
+# Output settings
+output:
+  directory: "./results"
+  formats:
+    - json
+    - csv
+    - latex
+  prefix: "eval"
+
+# Comparison settings
+comparison:
+  enabled: true
+  models:
+    - reglip
+    - siglip

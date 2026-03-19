@@ -1,0 +1,101 @@
+# RegLIP Frozen Backbone Training Configuration
+# Experiment 2: Only projection heads are trained; encoders are frozen.
+
+model:
+  name: "reglip"
+  pretrained_model: "google/siglip-base-patch16-224"
+  load_pretrained: true
+  freeze_backbone: true
+
+  # Model architecture (same as SigLIP base)
+  text_config:
+    hidden_size: 768
+    num_hidden_layers: 12
+    num_attention_heads: 12
+    intermediate_size: 3072
+    max_position_embeddings: 64
+    vocab_size: 32000
+    projection_size: 768
+
+  vision_config:
+    hidden_size: 768
+    num_hidden_layers: 12
+    num_attention_heads: 12
+    intermediate_size: 3072
+    image_size: 224
+    patch_size: 16
+    projection_size: 768
+
+  # RegLIP-specific configuration
+  reglip_config:
+    frozen_text_encoder: "qwen"
+    qwen_api_url: "http://212.41.29.82:6010"
+    qwen_model: "Qwen/Qwen3-Embedding-8B"
+    similarity_loss_weight: 1.0
+    logit_scale_init_value: 2.6592
+
+# Training parameters
+training:
+  batch_size: 64
+  gradient_accumulation_steps: 1
+  learning_rate: 0.001
+  weight_decay: 0.01
+  warmup_steps: 1000
+  max_epochs: 10
+  gradient_clip_norm: 1.0
+
+  # Optimizer
+  optimizer: "adamw"
+  scheduler: "cosine"
+
+  # Loss function
+  loss_type: "reglip_regression"
+
+# Data
+data:
+  dataset: "flickr30k"
+  data_root: "./data/flickr30k"
+  num_workers: 8
+  pin_memory: true
+  max_samples: null
+
+  # Image processing
+  image_size: 224
+  augmentation: true
+
+  # Text processing
+  max_text_length: 64
+  truncation: true
+  padding: "max_length"
+
+  # RegLIP-specific data settings
+  use_regression_targets: true
+  generate_similarities_online: true
+
+# Evaluation
+evaluation:
+  eval_every_n_epochs: 1
+  save_best_model: true
+  metrics:
+    - "image_to_text_retrieval"
+    - "text_to_image_retrieval"
+    - "zero_shot_classification"
+    - "regression_loss_analysis"
+
+# Logging and checkpointing
+logging:
+  use_wandb: false
+  use_tensorboard: true
+  project_name: "siglip_vs_reglip"
+  experiment_name: "reglip_frozen_flickr30k"
+  log_every_n_steps: 100
+
+checkpointing:
+  save_every_n_epochs: 1
+  checkpoint_dir: "./checkpoints/reglip_frozen"
+  keep_last_n_checkpoints: null
+
+# Hardware
+device: "cuda"
+mixed_precision: true
+distributed: false

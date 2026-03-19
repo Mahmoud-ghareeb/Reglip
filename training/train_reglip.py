@@ -62,6 +62,10 @@ def create_model(config):
             # Use sentence transformer
             setup_frozen_text_encoder(model, frozen_encoder_name)
     
+    if config['model'].get('freeze_backbone', False):
+        from reglip.utils import freeze_backbone
+        model = freeze_backbone(model)
+
     return model, reglip_config
 
 

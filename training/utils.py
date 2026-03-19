@@ -31,12 +31,14 @@ def create_optimizer_and_scheduler(model, config):
     lr = config['training']['learning_rate']
     weight_decay = config['training']['weight_decay']
     
+    params = [p for p in model.parameters() if p.requires_grad]
+
     if optimizer_name == 'adamw':
-        optimizer = optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
+        optimizer = optim.AdamW(params, lr=lr, weight_decay=weight_decay)
     elif optimizer_name == 'adam':
-        optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+        optimizer = optim.Adam(params, lr=lr, weight_decay=weight_decay)
     elif optimizer_name == 'sgd':
-        optimizer = optim.SGD(model.parameters(), lr=lr, weight_decay=weight_decay, momentum=0.9)
+        optimizer = optim.SGD(params, lr=lr, weight_decay=weight_decay, momentum=0.9)
     else:
         raise ValueError(f"Unsupported optimizer: {optimizer_name}")
     

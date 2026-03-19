@@ -12,12 +12,20 @@ from training.utils import load_config, setup_logging, create_optimizer_and_sche
 
 
 def create_model(config):
-    """Create SigLIP model."""
+    """Create SigLIP model.
+
+    When freeze_backbone is set, loads a RegLIPModel (from SigLIP weights)
+    so that freezing logic is identical between SigLIP and RegLIP experiments.
+    """
     model_name = config['model']['pretrained_model']
-    
-    # Load pretrained SigLIP model
-    model = SiglipModel.from_pretrained(model_name)
-    
+
+    if config['model'].get('freeze_backbone', False):
+        from reglip.utils import load_from_transformers_siglip, freeze_backbone
+        model, _ = load_from_transformers_siglip(model_name)
+        model = freeze_backbone(model)
+    else:
+        model = SiglipModel.from_pretrained(model_name)
+
     return model
 
 

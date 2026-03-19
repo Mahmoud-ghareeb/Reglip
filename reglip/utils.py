@@ -247,6 +247,40 @@ def load_from_transformers_siglip(
         return reglip_model.to(device), reglip_config
 
 
+def freeze_backbone(model, logger=None):
+    """Freeze all parameters except projection heads and logit scale/bias.
+
+    Trainable components after freezing:
+    - text_model.text_model.head (Linear projection)
+    - vision_model.vision_model.head (AttentionPoolingHead)
+    - logit_scale, logit_bias
+    """
+    # 1. Freeze everything
+    for param in model.parameters():
+        param.requires_grad = False
+
+    # 2. Unfreeze projection heads
+    for param in model.text_model.text_model.head.parameters():
+        param.requires_grad = True
+    for param in model.vision_model.vision_model.head.parameters():
+        param.requires_grad = True
+
+    # 3. Unfreeze logit scale/bias
+    model.logit_scale.requires_grad = True
+    model.logit_bias.requires_grad = True
+
+    # 4. Log counts
+    total = sum(p.numel() for p in model.parameters())
+    trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    msg = f"Frozen backbone: {trainable:,} trainable / {total:,} total parameters"
+    if logger:
+        logger.info(msg)
+    else:
+        print(msg)
+
+    return model
+
+
 def setup_frozen_text_encoder(
     reglip_model: RegLIPModel,
     encoder_name: str = "qwen",

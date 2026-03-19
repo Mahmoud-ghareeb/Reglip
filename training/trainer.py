@@ -311,14 +311,17 @@ class SigLIPTrainer(BaseTrainer):
     
     def compute_loss(self, batch: Dict[str, Any]) -> Dict[str, torch.Tensor]:
         """Compute SigLIP binary contrastive loss."""
-        
-        # Forward pass
-        outputs = self.model(
+
+        # Forward pass — if model is RegLIPModel, force binary contrastive loss
+        kwargs = dict(
             input_ids=batch['input_ids'],
             pixel_values=batch['pixel_values'],
             attention_mask=batch['attention_mask'],
             return_loss=True,
         )
+        if hasattr(self.model, 'binary_contrastive_loss'):
+            kwargs['use_regression_loss'] = False
+        outputs = self.model(**kwargs)
         
         loss = outputs.loss
         

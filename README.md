@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # RegLIP: Regression-Based Contrastive Learning for Vision-Language Models
 
 A research project exploring regression-based contrastive learning as an alternative to binary contrastive learning in vision-language models.
@@ -309,6 +308,3 @@ If you use this code in your research, please cite:
 - Based on [SigLIP](https://arxiv.org/abs/2303.15343) architecture
 - Uses [Qwen](https://github.com/QwenLM/Qwen) embeddings for similarity targets
 - Dataset: [Flickr30K](https://shannon.cs.illinois.edu/DenotationGraph/)
-=======
-# Reglip implementation
->>>>>>> 5b5a165 (edit: edit readme file)

@@ -5,6 +5,8 @@
 # Default paths
 REGLIP_CHECKPOINT="./checkpoints/reglip/best_model.pth"
 SIGLIP_CHECKPOINT="./checkpoints/siglip/best_model.pth"
+REGLIP_FROZEN_CHECKPOINT="./checkpoints/reglip_frozen/best_model.pth"
+SIGLIP_FROZEN_CHECKPOINT="./checkpoints/siglip_frozen/best_model.pth"
 DATA_ROOT="${DATA_ROOT:-./data/flickr30k}"
 OUTPUT_DIR="./results"
 
@@ -80,11 +82,41 @@ case $MODE in
             --format csv
         ;;
     
-    "compare")
-        echo "Comparing RegLIP vs SigLIP..."
+    "reglip_frozen")
+        echo "Evaluating frozen RegLIP model..."
         python scripts/run_evaluation.py \
-            --checkpoint $REGLIP_CHECKPOINT $SIGLIP_CHECKPOINT \
-            --model_names RegLIP SigLIP \
+            --checkpoint $REGLIP_FROZEN_CHECKPOINT \
+            --model_type reglip \
+            --task all \
+            --dataset all \
+            --data_root $DATA_ROOT \
+            --imagenet_root $IMAGENET_ROOT \
+            --imagenet_v2_root $IMAGENET_V2_ROOT \
+            --output $OUTPUT_DIR/reglip_frozen_eval \
+            --format csv
+        ;;
+
+    "siglip_frozen")
+        echo "Evaluating frozen SigLIP model..."
+        # Frozen SigLIP uses RegLIPModel internally, so model_type=reglip
+        python scripts/run_evaluation.py \
+            --checkpoint $SIGLIP_FROZEN_CHECKPOINT \
+            --model_type reglip \
+            --task all \
+            --dataset all \
+            --data_root $DATA_ROOT \
+            --imagenet_root $IMAGENET_ROOT \
+            --imagenet_v2_root $IMAGENET_V2_ROOT \
+            --output $OUTPUT_DIR/siglip_frozen_eval \
+            --format csv
+        ;;
+
+    "compare")
+        echo "Comparing all models (fine-tuned + frozen)..."
+        python scripts/run_evaluation.py \
+            --checkpoint $REGLIP_CHECKPOINT $SIGLIP_CHECKPOINT $REGLIP_FROZEN_CHECKPOINT $SIGLIP_FROZEN_CHECKPOINT \
+            --model_names RegLIP SigLIP RegLIP_Frozen SigLIP_Frozen \
+            --model_type reglip siglip reglip reglip \
             --compare \
             --task all \
             --dataset all \
@@ -178,7 +210,9 @@ case $MODE in
         echo "  reglip_base   - Evaluate BASE RegLIP model (pretrained)"
         echo "  siglip        - Evaluate fine-tuned SigLIP model on all tasks"
         echo "  siglip_base   - Evaluate BASE SigLIP model (pretrained)"
-        echo "  compare       - Compare RegLIP vs SigLIP"
+        echo "  reglip_frozen - Evaluate frozen-backbone RegLIP model"
+        echo "  siglip_frozen - Evaluate frozen-backbone SigLIP model"
+        echo "  compare       - Compare all models (fine-tuned + frozen)"
         echo ""
         echo "Task-specific:"
         echo "  retrieval     - Run retrieval evaluation only (Flickr30K)"

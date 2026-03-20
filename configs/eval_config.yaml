@@ -3,11 +3,17 @@
 # Models to evaluate
 models:
   reglip:
-    checkpoint: "./checkpoints/reglip/checkpoint_epoch_1.pth"
+    checkpoint: "./checkpoints/reglip/best_model.pth"
     type: "reglip"
   siglip:
     checkpoint: "./checkpoints/siglip/best_model.pth"
     type: "siglip"
+  reglip_frozen:
+    checkpoint: "./checkpoints/reglip_frozen/best_model.pth"
+    type: "reglip"
+  siglip_frozen:
+    checkpoint: "./checkpoints/siglip_frozen/best_model.pth"
+    type: "reglip"  # frozen SigLIP uses RegLIPModel internally
 
 # Tasks to run
 tasks:
@@ -103,3 +109,5 @@ comparison:
   models:
     - reglip
     - siglip
+    - reglip_frozen
+    - siglip_frozen

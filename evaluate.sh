@@ -31,6 +31,7 @@ case $MODE in
         echo "Evaluating RegLIP model..."
         python scripts/run_evaluation.py \
             --checkpoint $REGLIP_CHECKPOINT \
+            --model_name "RegLIP Fine-tuned" \
             --task all \
             --dataset all \
             --data_root $DATA_ROOT \
@@ -45,6 +46,7 @@ case $MODE in
         python scripts/run_evaluation.py \
             --checkpoint "" \
             --model_type reglip \
+            --model_name "Base (pretrained)" \
             --task all \
             --dataset all \
             --data_root $DATA_ROOT \
@@ -59,6 +61,7 @@ case $MODE in
         python scripts/run_evaluation.py \
             --checkpoint $SIGLIP_CHECKPOINT \
             --model_type siglip \
+            --model_name "SigLIP Fine-tuned" \
             --task all \
             --dataset all \
             --data_root $DATA_ROOT \
@@ -73,6 +76,7 @@ case $MODE in
         python scripts/run_evaluation.py \
             --checkpoint "" \
             --model_type siglip \
+            --model_name "Base (pretrained)" \
             --task all \
             --dataset all \
             --data_root $DATA_ROOT \
@@ -87,6 +91,7 @@ case $MODE in
         python scripts/run_evaluation.py \
             --checkpoint $REGLIP_FROZEN_CHECKPOINT \
             --model_type reglip \
+            --model_name "RegLIP Frozen" \
             --task all \
             --dataset all \
             --data_root $DATA_ROOT \
@@ -102,6 +107,7 @@ case $MODE in
         python scripts/run_evaluation.py \
             --checkpoint $SIGLIP_FROZEN_CHECKPOINT \
             --model_type reglip \
+            --model_name "SigLIP Frozen" \
             --task all \
             --dataset all \
             --data_root $DATA_ROOT \

@@ -174,6 +174,12 @@ def main():
         help="Name(s) for model(s) (for comparison mode)"
     )
     parser.add_argument(
+        "--model_name",
+        type=str,
+        default=None,
+        help="Display name for the model in CSV output (e.g., 'RegLIP Fine-tuned')"
+    )
+    parser.add_argument(
         "--model_type",
         type=str,
         choices=["reglip", "siglip", "auto"],
@@ -309,7 +315,6 @@ def main():
     # Class names from imagenet-simple-labels for SigLIP/CLIP zero-shot compatibility
     if imagenet_root:
         dataset_kwargs["imagenet"] = {"data_root": imagenet_root, "split": "val"}
-        dataset_kwargs["imagenet_real"] = {"data_root": imagenet_root, "split": "val"}
     
     if imagenet_v2_root:
         dataset_kwargs["imagenet_v2"] = {"data_root": imagenet_v2_root, "split": "matched-frequency"}
@@ -369,8 +374,11 @@ def main():
             device=args.device,
         )
         
+        # Use --model_name if provided, otherwise fall back to checkpoint path
+        display_name = args.model_name if args.model_name else checkpoint_path
+
         evaluator.run_evaluation(
-            model_path=checkpoint_path,
+            model_path=display_name,
             datasets=datasets,
             tasks=tasks,
             output_path=args.output,

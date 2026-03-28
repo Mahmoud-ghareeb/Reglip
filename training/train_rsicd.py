@@ -122,22 +122,16 @@ def main():
 
     # Validate RSICD dataset
     data_root = config["data"]["data_root"]
-    json_path = os.path.join(data_root, "dataset_rsicd.json")
-    images_dir = os.path.join(data_root, "RSICD_images")
+    train_csv = os.path.join(data_root, "train.csv")
 
-    if not os.path.exists(json_path):
-        logger.error(f"RSICD annotation file not found: {json_path}")
+    if not os.path.exists(train_csv):
+        logger.error(f"RSICD train.csv not found: {train_csv}")
         logger.error("Expected structure:")
         logger.error(f"  {data_root}/")
-        logger.error("  ├── RSICD_images/")
-        logger.error("  │   ├── airport_001.jpg")
-        logger.error("  │   └── ...")
-        logger.error("  └── dataset_rsicd.json")
-        raise FileNotFoundError(f"Missing {json_path}")
-
-    if not os.path.isdir(images_dir):
-        logger.error(f"RSICD images directory not found: {images_dir}")
-        raise FileNotFoundError(f"Missing {images_dir}")
+        logger.error("  ├── train.csv")
+        logger.error("  ├── test.csv")
+        logger.error("  └── valid.csv")
+        raise FileNotFoundError(f"Missing {train_csv}")
 
     # Create datasets
     train_dataset = RSICDTrainingDataset(

@@ -30,10 +30,16 @@ def create_collate_fn(tokenizer, similarity_generator=None, use_regression_targe
             return_tensors="pt",
         )
 
+        # SigLIP tokenizer may not return attention_mask with max_length padding
+        attention_mask = text_inputs.get(
+            "attention_mask",
+            torch.ones_like(text_inputs["input_ids"]),
+        )
+
         result = {
             "pixel_values": pixel_values,
             "input_ids": text_inputs["input_ids"],
-            "attention_mask": text_inputs["attention_mask"],
+            "attention_mask": attention_mask,
             "captions": captions,
         }
 

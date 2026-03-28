@@ -1,0 +1,13 @@
+model,dataset,task,metric,value
+SigLIP Frozen,flickr30k,retrieval,error,data_root not provided. Set DATA_ROOT env var or use --data_root
+SigLIP Frozen,coco,retrieval,error,torch.cat(): expected a non-empty list of Tensors
+SigLIP Frozen,cifar10,zero_shot,top1_accuracy,78.28
+SigLIP Frozen,cifar10,zero_shot,top5_accuracy,98.48
+SigLIP Frozen,cifar100,zero_shot,top1_accuracy,42.13
+SigLIP Frozen,cifar100,zero_shot,top5_accuracy,68.87
+SigLIP Frozen,imagenet,zero_shot,top1_accuracy,23.080000000000002
+SigLIP Frozen,imagenet,zero_shot,top5_accuracy,48.36
+SigLIP Frozen,imagenet_v2,zero_shot,top1_accuracy,20.5
+SigLIP Frozen,imagenet_v2,zero_shot,top5_accuracy,42.66
+SigLIP Frozen,imagenet_real,zero_shot,error,data_root not provided. Set IMAGENET_ROOT env var or use --imagenet_root
+SigLIP Frozen,objectnet,zero_shot,error,data_root not provided. Set OBJECTNET_ROOT env var or use --objectnet_root

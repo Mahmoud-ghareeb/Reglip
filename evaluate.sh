@@ -37,10 +37,10 @@ case $MODE in
             --data_root $DATA_ROOT \
             --imagenet_root $IMAGENET_ROOT \
             --imagenet_v2_root $IMAGENET_V2_ROOT \
-            --output $OUTPUT_DIR/reglip_eval \
+            --output $OUTPUT_DIR/reglip_finetuned \
             --format csv
         ;;
-    
+
     "reglip_base")
         echo "Evaluating BASE RegLIP model (pretrained, no fine-tuning)..."
         python scripts/run_evaluation.py \
@@ -52,10 +52,10 @@ case $MODE in
             --data_root $DATA_ROOT \
             --imagenet_root $IMAGENET_ROOT \
             --imagenet_v2_root $IMAGENET_V2_ROOT \
-            --output $OUTPUT_DIR/reglip_base_eval \
+            --output $OUTPUT_DIR/base_pretrained \
             --format csv
         ;;
-    
+
     "siglip")
         echo "Evaluating SigLIP model..."
         python scripts/run_evaluation.py \
@@ -67,10 +67,10 @@ case $MODE in
             --data_root $DATA_ROOT \
             --imagenet_root $IMAGENET_ROOT \
             --imagenet_v2_root $IMAGENET_V2_ROOT \
-            --output $OUTPUT_DIR/siglip_eval \
+            --output $OUTPUT_DIR/siglip_finetuned \
             --format csv
         ;;
-    
+
     "siglip_base")
         echo "Evaluating BASE SigLIP model (pretrained, no fine-tuning)..."
         python scripts/run_evaluation.py \
@@ -82,10 +82,10 @@ case $MODE in
             --data_root $DATA_ROOT \
             --imagenet_root $IMAGENET_ROOT \
             --imagenet_v2_root $IMAGENET_V2_ROOT \
-            --output $OUTPUT_DIR/siglip_base_eval \
+            --output $OUTPUT_DIR/base_pretrained \
             --format csv
         ;;
-    
+
     "reglip_frozen")
         echo "Evaluating frozen RegLIP model..."
         python scripts/run_evaluation.py \
@@ -97,7 +97,7 @@ case $MODE in
             --data_root $DATA_ROOT \
             --imagenet_root $IMAGENET_ROOT \
             --imagenet_v2_root $IMAGENET_V2_ROOT \
-            --output $OUTPUT_DIR/reglip_frozen_eval \
+            --output $OUTPUT_DIR/reglip_frozen \
             --format csv
         ;;
 
@@ -113,7 +113,7 @@ case $MODE in
             --data_root $DATA_ROOT \
             --imagenet_root $IMAGENET_ROOT \
             --imagenet_v2_root $IMAGENET_V2_ROOT \
-            --output $OUTPUT_DIR/siglip_frozen_eval \
+            --output $OUTPUT_DIR/siglip_frozen \
             --format csv
         ;;
 

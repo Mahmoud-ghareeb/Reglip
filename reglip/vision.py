@@ -207,56 +207,27 @@ class RegLIPMultiheadAttentionPoolingHead(nn.Module):
     """
     Multi-head attention pooling head matching SigLIP's architecture.
     This uses a learnable probe vector that attends to all patch tokens.
-
-    Uses separate Q/K/V projections to match HuggingFace SigLIP's weight format
-    (not nn.MultiheadAttention which uses a fused in_proj_weight).
     """
 
     def __init__(self, config: RegLIPVisionConfig):
         super().__init__()
-        self.num_heads = config.num_attention_heads
-        self.hidden_size = config.hidden_size
-        self.head_dim = self.hidden_size // self.num_heads
-
         self.probe = nn.Parameter(torch.randn(1, 1, config.hidden_size))
-        self.attention = self._build_attention(config)
+        self.attention = nn.MultiheadAttention(
+            config.hidden_size,
+            config.num_attention_heads,
+            batch_first=True
+        )
         self.layernorm = nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps)
         self.mlp = RegLIPVisionMLP(config)
 
-    def _build_attention(self, config):
-        """Build attention module with separate Q/K/V projections matching SigLIP."""
-        return nn.ModuleDict({
-            'k_proj': nn.Linear(config.hidden_size, config.hidden_size),
-            'v_proj': nn.Linear(config.hidden_size, config.hidden_size),
-            'q_proj': nn.Linear(config.hidden_size, config.hidden_size),
-            'out_proj': nn.Linear(config.hidden_size, config.hidden_size),
-        })
-
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor:
-        batch_size, seq_len, _ = hidden_states.shape
+        batch_size = hidden_states.shape[0]
         probe = self.probe.expand(batch_size, -1, -1)
 
-        # Separate Q/K/V projections (matches SigLIP)
-        query = self.attention['q_proj'](probe)
-        key = self.attention['k_proj'](hidden_states)
-        value = self.attention['v_proj'](hidden_states)
+        # Attention: probe queries the hidden states
+        hidden_states, _ = self.attention(probe, hidden_states, hidden_states)
 
-        # Reshape for multi-head attention
-        query = query.view(batch_size, 1, self.num_heads, self.head_dim).transpose(1, 2)
-        key = key.view(batch_size, seq_len, self.num_heads, self.head_dim).transpose(1, 2)
-        value = value.view(batch_size, seq_len, self.num_heads, self.head_dim).transpose(1, 2)
-
-        # Scaled dot-product attention
-        scale = self.head_dim ** -0.5
-        attn_weights = torch.matmul(query, key.transpose(-2, -1)) * scale
-        attn_weights = F.softmax(attn_weights, dim=-1)
-        attn_output = torch.matmul(attn_weights, value)
-
-        # Reshape and project output
-        attn_output = attn_output.transpose(1, 2).contiguous().view(batch_size, 1, self.hidden_size)
-        hidden_states = self.attention['out_proj'](attn_output)
-
-        # Residual + MLP (matches SigLIP)
+        # Residual connection not used here (matches SigLIP)
         residual = hidden_states
         hidden_states = self.layernorm(hidden_states)
         hidden_states = residual + self.mlp(hidden_states)

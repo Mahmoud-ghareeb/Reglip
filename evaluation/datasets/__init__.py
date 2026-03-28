@@ -10,6 +10,7 @@ from .imagenet import (
     ObjectNetDataset,
 )
 from .coco import COCORetrievalDataset
+from .rsicd import RSICDClassificationDataset, RSICDRetrievalDataset
 
 __all__ = [
     "BaseEvalDataset",
@@ -21,4 +22,6 @@ __all__ = [
     "ImageNetReaLDataset",
     "ObjectNetDataset",
     "COCORetrievalDataset",
+    "RSICDClassificationDataset",
+    "RSICDRetrievalDataset",
 ]

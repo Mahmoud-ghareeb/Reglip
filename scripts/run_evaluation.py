@@ -240,6 +240,12 @@ def main():
         default=None,
         help="Root directory for COCO data (uses COCO_ROOT env var if not set)"
     )
+    parser.add_argument(
+        "--rsicd_root",
+        type=str,
+        default=None,
+        help="Root directory for RSICD data (uses RSICD_ROOT env var if not set)"
+    )
     
     # Zero-shot arguments
     parser.add_argument(
@@ -303,6 +309,7 @@ def main():
     imagenet_v2_root = args.imagenet_v2_root or os.environ.get("IMAGENET_V2_ROOT")
     objectnet_root = args.objectnet_root or os.environ.get("OBJECTNET_ROOT")
     coco_root = args.coco_root or os.environ.get("COCO_ROOT", args.data_root)
+    rsicd_root = args.rsicd_root or os.environ.get("RSICD_ROOT")
     
     # Prepare dataset kwargs
     dataset_kwargs = {
@@ -325,6 +332,11 @@ def main():
     # Add COCO if root is provided
     if coco_root:
         dataset_kwargs["coco"] = {"data_root": coco_root, "split": "test"}
+
+    # Add RSICD if root is provided
+    if rsicd_root:
+        dataset_kwargs["rsicd"] = {"data_root": rsicd_root, "split": "test"}
+        dataset_kwargs["rsicd_retrieval"] = {"data_root": rsicd_root, "split": "test"}
     
     # Prepare task kwargs
     task_kwargs = {

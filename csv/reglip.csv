@@ -1,23 +1,14 @@
 model,dataset,task,metric,value
-./checkpoints/reglip/best_model.pth,flickr30k,retrieval,i2t_r1,0.06291286568103177
-./checkpoints/reglip/best_model.pth,flickr30k,retrieval,t2i_r1,0.031456432840515886
-./checkpoints/reglip/best_model.pth,flickr30k,retrieval,i2t_r5,0.2516514627241271
-./checkpoints/reglip/best_model.pth,flickr30k,retrieval,t2i_r5,0.31456432840515886
-./checkpoints/reglip/best_model.pth,flickr30k,retrieval,i2t_r10,0.53475935828877
-./checkpoints/reglip/best_model.pth,flickr30k,retrieval,t2i_r10,0.5662157911292859
-./checkpoints/reglip/best_model.pth,flickr30k,retrieval,mean_recall,0.2935933731781482
-./checkpoints/reglip/best_model.pth,flickr30k,retrieval,i2t_median_rank,1216.0
-./checkpoints/reglip/best_model.pth,flickr30k,retrieval,t2i_median_rank,1013.0
-./checkpoints/reglip/best_model.pth,flickr30k,retrieval,sim_diagonal_mean,-0.2184300422668457
-./checkpoints/reglip/best_model.pth,flickr30k,retrieval,sim_diagonal_std,0.050252318382263184
-./checkpoints/reglip/best_model.pth,flickr30k,retrieval,sim_diagonal_min,-0.36577725410461426
-./checkpoints/reglip/best_model.pth,flickr30k,retrieval,sim_diagonal_max,0.17398478090763092
-./checkpoints/reglip/best_model.pth,flickr30k,retrieval,sim_off_diagonal_mean,-0.2331305742263794
-./checkpoints/reglip/best_model.pth,flickr30k,retrieval,sim_off_diagonal_std,0.045246295630931854
-./checkpoints/reglip/best_model.pth,flickr30k,retrieval,sim_off_diagonal_min,-0.4102696478366852
-./checkpoints/reglip/best_model.pth,flickr30k,retrieval,sim_off_diagonal_max,0.20888710021972656
-./checkpoints/reglip/best_model.pth,flickr30k,retrieval,sim_gap,0.014700531959533691
-./checkpoints/reglip/best_model.pth,cifar10,zero_shot,top1_accuracy,14.16
-./checkpoints/reglip/best_model.pth,cifar10,zero_shot,top5_accuracy,56.8
-./checkpoints/reglip/best_model.pth,cifar100,zero_shot,top1_accuracy,1.59
-./checkpoints/reglip/best_model.pth,cifar100,zero_shot,top5_accuracy,6.08
+./checkpoints/reglip/best_model.pth,flickr30k,retrieval,error,data_root not provided. Set DATA_ROOT env var or use --data_root
+./checkpoints/reglip/best_model.pth,coco,retrieval,error,torch.cat(): expected a non-empty list of Tensors
+./checkpoints/reglip/best_model.pth,cifar10,zero_shot,top1_accuracy,49.89
+./checkpoints/reglip/best_model.pth,cifar10,zero_shot,top5_accuracy,89.52
+./checkpoints/reglip/best_model.pth,cifar100,zero_shot,top1_accuracy,19.68
+./checkpoints/reglip/best_model.pth,cifar100,zero_shot,top5_accuracy,41.83
+./checkpoints/reglip/best_model.pth,imagenet,zero_shot,top1_accuracy,13.639999999999999
+./checkpoints/reglip/best_model.pth,imagenet,zero_shot,top5_accuracy,32.36
+./checkpoints/reglip/best_model.pth,imagenet_v2,zero_shot,top1_accuracy,12.72
+./checkpoints/reglip/best_model.pth,imagenet_v2,zero_shot,top5_accuracy,29.07
+./checkpoints/reglip/best_model.pth,imagenet_real,zero_shot,top1_accuracy,13.639999999999999
+./checkpoints/reglip/best_model.pth,imagenet_real,zero_shot,top5_accuracy,32.36
+./checkpoints/reglip/best_model.pth,objectnet,zero_shot,error,data_root not provided. Set OBJECTNET_ROOT env var or use --objectnet_root

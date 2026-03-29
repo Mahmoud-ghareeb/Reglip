@@ -41,7 +41,7 @@ train_siglip() {
 
 evaluate() {
     echo ""
-    echo ">>> Evaluating models on RSICD zero-shot classification..."
+    echo ">>> Evaluating models on PatternNet zero-shot classification..."
 
     # RegLIP RSICD
     if [ -f checkpoints/reglip_rsicd/best_model.pth ]; then
@@ -50,10 +50,10 @@ evaluate() {
             --checkpoint checkpoints/reglip_rsicd/best_model.pth \
             --model_type reglip \
             --model_name "RegLIP RSICD" \
-            --dataset rsicd \
+            --dataset patternnet \
             --task zero_shot \
-            --rsicd_root "$DATA_ROOT" \
-            --output results/reglip_rsicd
+            --max_samples 1000 \
+            --output results/reglip_patternnet
     fi
 
     # SigLIP RSICD
@@ -63,22 +63,22 @@ evaluate() {
             --checkpoint checkpoints/siglip_rsicd/best_model.pth \
             --model_type reglip \
             --model_name "SigLIP RSICD" \
-            --dataset rsicd \
+            --dataset patternnet \
             --task zero_shot \
-            --rsicd_root "$DATA_ROOT" \
-            --output results/siglip_rsicd
+            --max_samples 1000 \
+            --output results/siglip_patternnet
     fi
 
     # Base pretrained (no fine-tuning)
-    echo "  Evaluating Base pretrained on RSICD..."
+    echo "  Evaluating Base pretrained on PatternNet..."
     python scripts/run_evaluation.py \
         --checkpoint none \
         --model_type reglip \
         --model_name "Base (pretrained)" \
-        --dataset rsicd \
+        --dataset patternnet \
         --task zero_shot \
-        --rsicd_root "$DATA_ROOT" \
-        --output results/base_rsicd
+        --max_samples 1000 \
+        --output results/base_patternnet
 
     echo ""
     echo ">>> Done! Results saved to results/"

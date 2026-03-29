@@ -6,7 +6,7 @@ Expected directory structure:
     ├── test.csv
     └── valid.csv
 
-Each CSV has columns: image, captions, filename (and possibly others).
+Each CSV has columns: image, captions (and possibly others).
 - image: byte array string, parsed via ast.literal_eval to get {'bytes': ...}
 - captions: newline-separated caption strings wrapped in brackets
 """
@@ -75,69 +75,30 @@ def _load_csv(data_root: str, split: str) -> pd.DataFrame:
     return pd.read_csv(csv_path)
 
 
-def _filename_to_category(filename: str) -> str:
-    """Extract scene category from RSICD filename.
+def _caption_to_category(captions: List[str]) -> Optional[str]:
+    """Infer scene category from captions by matching against known class names.
 
-    Handles both simple ('airport_001.jpg') and compound
-    ('denseresidential_012.jpg') category names.
+    Checks if any class name appears in any caption. Longer class names are
+    checked first to avoid 'park' matching before 'parking'.
     """
-    name = os.path.splitext(filename)[0]
-    parts = name.split("_")
+    # Sort by length descending so "baseball field" matches before "field",
+    # "bare land" before "land", "dense residential" before "residential", etc.
+    sorted_classes = sorted(RSICD_CLASS_NAMES, key=len, reverse=True)
 
-    # Remove trailing numeric part
-    if parts[-1].isdigit():
-        parts = parts[:-1]
+    combined = " ".join(captions).lower()
 
-    category = "_".join(parts).lower()
+    for cls in sorted_classes:
+        if cls in combined:
+            return cls
 
-    # Map known filename prefixes to CLASS_NAMES
-    category_map = {
-        "airport": "airport",
-        "bareland": "bare land",
-        "baseballfield": "baseball field",
-        "beach": "beach",
-        "bridge": "bridge",
-        "center": "center",
-        "church": "church",
-        "commercial": "commercial",
-        "denseresidential": "dense residential",
-        "desert": "desert",
-        "farmland": "farmland",
-        "forest": "forest",
-        "industrial": "industrial",
-        "meadow": "meadow",
-        "mediumresidential": "medium residential",
-        "mountain": "mountain",
-        "park": "park",
-        "parking": "parking",
-        "playground": "playground",
-        "pond": "pond",
-        "port": "port",
-        "railwaystation": "railway station",
-        "resort": "resort",
-        "river": "river",
-        "school": "school",
-        "sparseresidential": "sparse residential",
-        "square": "square",
-        "stadium": "stadium",
-        "storagetanks": "storage tanks",
-        "viaduct": "viaduct",
-    }
-
-    # Try with and without underscores
-    key = category.replace("_", "")
-    if key in category_map:
-        return category_map[key]
-
-    # Fallback: replace underscores with spaces
-    return category.replace("_", " ")
+    return None
 
 
 class RSICDClassificationDataset(BaseEvalDataset):
     """RSICD dataset for zero-shot scene classification.
 
-    Loads images from CSV byte arrays. Scene categories are inferred
-    from the filename column.
+    Loads images from CSV byte arrays. Scene categories are inferred from
+    captions (or filename column if available).
     """
 
     name = "rsicd"
@@ -163,16 +124,25 @@ class RSICDClassificationDataset(BaseEvalDataset):
         self.labels = []
         self.class_names_per_sample = []
 
+        has_filename = "filename" in self.df.columns
         skipped = 0
+
         for i in range(len(self.df)):
             row = self.df.iloc[i]
-            filename = str(row.get("filename", ""))
-            if not filename:
-                skipped += 1
-                continue
+            category = None
 
-            category = _filename_to_category(filename)
-            if category not in self.class_to_idx:
+            # Try filename first if available
+            if has_filename:
+                filename = str(row.get("filename", ""))
+                if filename:
+                    category = _filename_to_category(filename)
+
+            # Fall back to inferring from captions
+            if category is None or category not in self.class_to_idx:
+                captions = _parse_captions(str(row["captions"]))
+                category = _caption_to_category(captions)
+
+            if category is None or category not in self.class_to_idx:
                 skipped += 1
                 continue
 
@@ -186,7 +156,7 @@ class RSICDClassificationDataset(BaseEvalDataset):
             self.class_names_per_sample = self.class_names_per_sample[:max_samples]
 
         if skipped > 0:
-            print(f"  Skipped {skipped} samples (missing filename or unknown category)")
+            print(f"  Skipped {skipped} samples (could not determine category)")
 
         n_classes = len(set(self.labels))
         print(f"Loaded RSICD {split} set with {len(self.indices)} samples ({n_classes} classes)")
@@ -260,16 +230,13 @@ class RSICDRetrievalDataset(BaseEvalDataset):
         else:
             pixel_values = image
 
-        captions = _parse_captions(row["captions"])
+        captions = _parse_captions(str(row["captions"]))
         caption = captions[0] if captions else ""
-
-        filename = str(row.get("filename", f"sample_{idx}"))
-        image_id = os.path.splitext(filename)[0]
 
         return {
             "pixel_values": pixel_values,
             "caption": caption,
-            "image_id": image_id,
+            "image_id": str(idx),
         }
 
 
@@ -310,7 +277,7 @@ class RSICDTrainingDataset(torch.utils.data.Dataset):
         image = _bytes_to_image(row["image"])
 
         # Parse and pick caption
-        captions = _parse_captions(row["captions"])
+        captions = _parse_captions(str(row["captions"]))
         if not captions:
             caption = ""
         elif self.random_caption:
@@ -336,3 +303,59 @@ class RSICDTrainingDataset(torch.utils.data.Dataset):
             "pixel_values": pixel_values,
             "caption": caption,
         }
+
+
+def _filename_to_category(filename: str) -> Optional[str]:
+    """Extract scene category from RSICD filename.
+
+    Handles both simple ('airport_001.jpg') and compound
+    ('denseresidential_012.jpg') category names.
+    """
+    name = os.path.splitext(filename)[0]
+    parts = name.split("_")
+
+    # Remove trailing numeric part
+    if parts[-1].isdigit():
+        parts = parts[:-1]
+
+    category = "_".join(parts).lower()
+
+    # Map known filename prefixes to CLASS_NAMES
+    category_map = {
+        "airport": "airport",
+        "bareland": "bare land",
+        "baseballfield": "baseball field",
+        "beach": "beach",
+        "bridge": "bridge",
+        "center": "center",
+        "church": "church",
+        "commercial": "commercial",
+        "denseresidential": "dense residential",
+        "desert": "desert",
+        "farmland": "farmland",
+        "forest": "forest",
+        "industrial": "industrial",
+        "meadow": "meadow",
+        "mediumresidential": "medium residential",
+        "mountain": "mountain",
+        "park": "park",
+        "parking": "parking",
+        "playground": "playground",
+        "pond": "pond",
+        "port": "port",
+        "railwaystation": "railway station",
+        "resort": "resort",
+        "river": "river",
+        "school": "school",
+        "sparseresidential": "sparse residential",
+        "square": "square",
+        "stadium": "stadium",
+        "storagetanks": "storage tanks",
+        "viaduct": "viaduct",
+    }
+
+    key = category.replace("_", "")
+    if key in category_map:
+        return category_map[key]
+
+    return category.replace("_", " ")

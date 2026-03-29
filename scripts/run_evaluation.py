@@ -240,12 +240,6 @@ def main():
         default=None,
         help="Root directory for COCO data (uses COCO_ROOT env var if not set)"
     )
-    parser.add_argument(
-        "--rsicd_root",
-        type=str,
-        default=None,
-        help="Root directory for RSICD data (uses RSICD_ROOT env var if not set)"
-    )
     
     # Zero-shot arguments
     parser.add_argument(
@@ -297,6 +291,12 @@ def main():
         default="cuda" if torch.cuda.is_available() else "cpu",
         help="Device to use"
     )
+    parser.add_argument(
+        "--max_samples",
+        type=int,
+        default=None,
+        help="Maximum number of samples per dataset (for quick testing)"
+    )
     
     args = parser.parse_args()
     
@@ -309,13 +309,18 @@ def main():
     imagenet_v2_root = args.imagenet_v2_root or os.environ.get("IMAGENET_V2_ROOT")
     objectnet_root = args.objectnet_root or os.environ.get("OBJECTNET_ROOT")
     coco_root = args.coco_root or os.environ.get("COCO_ROOT", args.data_root)
-    rsicd_root = args.rsicd_root or os.environ.get("RSICD_ROOT")
     
     # Prepare dataset kwargs
     dataset_kwargs = {
         "cifar10": {"data_root": args.cifar_root, "split": "test"},
         "cifar100": {"data_root": args.cifar_root, "split": "test"},
+        "patternnet": {"split": "train"},
     }
+
+    # Add max_samples to all datasets if specified
+    if args.max_samples:
+        for key in dataset_kwargs:
+            dataset_kwargs[key]["max_samples"] = args.max_samples
     
     # Add ImageNet datasets if root is provided
     # Mapping: data_root/ILSVRC2012_img_val_subset/{0..999}/ = class indices (notebook structure)
@@ -333,10 +338,6 @@ def main():
     if coco_root:
         dataset_kwargs["coco"] = {"data_root": coco_root, "split": "test"}
 
-    # Add RSICD if root is provided
-    if rsicd_root:
-        dataset_kwargs["rsicd"] = {"data_root": rsicd_root, "split": "test"}
-        dataset_kwargs["rsicd_retrieval"] = {"data_root": rsicd_root, "split": "test"}
     
     # Prepare task kwargs
     task_kwargs = {

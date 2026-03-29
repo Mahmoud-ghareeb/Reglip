@@ -15,8 +15,7 @@ from .datasets import (
     ImageNetReaLDataset,
     ObjectNetDataset,
     COCORetrievalDataset,
-    RSICDClassificationDataset,
-    RSICDRetrievalDataset,
+    PatternNetDataset,
 )
 from .utils import (
     format_results_table,
@@ -78,13 +77,9 @@ class Evaluator:
             "class": ObjectNetDataset,
             "task_type": "classification",
         },
-        "rsicd": {
-            "class": RSICDClassificationDataset,
+        "patternnet": {
+            "class": PatternNetDataset,
             "task_type": "classification",
-        },
-        "rsicd_retrieval": {
-            "class": RSICDRetrievalDataset,
-            "task_type": "retrieval",
         },
     }
     
@@ -214,7 +209,7 @@ class Evaluator:
             # Datasets that require data_root
             datasets_requiring_data_root = [
                 "flickr30k", "coco", "imagenet", "imagenet_v2",
-                "imagenet_real", "objectnet", "rsicd", "rsicd_retrieval"
+                "imagenet_real", "objectnet"
             ]
             
             if dataset_name in datasets_requiring_data_root and not ds_kwargs.get("data_root"):
@@ -229,8 +224,6 @@ class Evaluator:
                     "objectnet": "OBJECTNET_ROOT",
                     "coco": "COCO_ROOT",
                     "flickr30k": "DATA_ROOT",  # Usually uses --data_root arg
-                    "rsicd": "RSICD_ROOT",
-                    "rsicd_retrieval": "RSICD_ROOT",
                 }
                 # Map dataset names to their argument names
                 arg_map = {
@@ -240,8 +233,6 @@ class Evaluator:
                     "objectnet": "objectnet_root",
                     "coco": "coco_root",
                     "flickr30k": "data_root",
-                    "rsicd": "rsicd_root",
-                    "rsicd_retrieval": "rsicd_root",
                 }
                 env_var_name = env_var_map.get(dataset_name, dataset_name.upper().replace('-', '_') + "_ROOT")
                 arg_name = arg_map.get(dataset_name, f"{dataset_name}_root")

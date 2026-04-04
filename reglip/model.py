@@ -161,7 +161,7 @@ class RegLIPModel(nn.Module):
         # --- Encode texts ------------------------------------------------
         if self.encoder_type == 'embedding_model':
             text_emb_np = self.frozen_text_encoder.get_embeddings(texts, batch_size=32)
-            text_embeddings = torch.from_numpy(text_emb_np).to(device)
+            text_embeddings = torch.from_numpy(text_emb_np).float().to(device)
         elif self.encoder_type == 'sentence_transformer':
             with torch.no_grad():
                 text_embeddings = self.frozen_text_encoder.encode(
@@ -169,7 +169,7 @@ class RegLIPModel(nn.Module):
                 )
         elif self.encoder_type == 'qwen_client':
             text_emb_np = self.frozen_text_encoder.get_embeddings(texts, batch_size=32)
-            text_embeddings = torch.from_numpy(text_emb_np).to(device)
+            text_embeddings = torch.from_numpy(text_emb_np).float().to(device)
         else:
             raise ValueError(f"Unsupported encoder type: {self.encoder_type}")
 
@@ -184,7 +184,7 @@ class RegLIPModel(nn.Module):
 
         if use_cross_modal:
             img_emb_np = self.frozen_text_encoder.get_image_embeddings(images, batch_size=8)
-            image_embeddings = torch.from_numpy(img_emb_np).to(device)
+            image_embeddings = torch.from_numpy(img_emb_np).float().to(device)
             image_embeddings = F.normalize(image_embeddings, p=2, dim=1)
             # Cross-modal similarity: each row i = similarity of image_i to all texts
             similarity_matrix = torch.matmul(image_embeddings, text_embeddings.t())

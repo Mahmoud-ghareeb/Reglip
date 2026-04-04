@@ -1,4 +1,4 @@
-"""Tevatron/OmniEmbed-v0.1 — multimodal embedding model served via OpenAI-compatible API."""
+"""Tevatron/OmniEmbed-v0.1 — multimodal embedding model served via custom API."""
 
 import base64
 import time
@@ -13,9 +13,10 @@ from .base import BaseEmbeddingModel
 
 class OmniEmbedEmbedding(BaseEmbeddingModel):
     """
-    API client for OmniEmbed served behind a vLLM / OpenAI-compatible endpoint.
+    API client for OmniEmbed.
 
-    Supports both text and image embeddings (cross-modal).
+    Text  → POST /v1/embeddings          (input: list[str])
+    Image → POST /v1/embeddings/multimodal (input: list of chat-format messages)
     """
 
     def __init__(
@@ -25,7 +26,8 @@ class OmniEmbedEmbedding(BaseEmbeddingModel):
     ):
         self.base_url = base_url.rstrip("/")
         self.model = model
-        self.endpoint = f"{self.base_url}/v1/embeddings"
+        self._text_endpoint = f"{self.base_url}/v1/embeddings"
+        self._multimodal_endpoint = f"{self.base_url}/v1/embeddings/multimodal"
         self._embedding_dim = 3584  # Qwen2.5-Omni hidden size
 
     # -- BaseEmbeddingModel interface ------------------------------------------
@@ -45,7 +47,9 @@ class OmniEmbedEmbedding(BaseEmbeddingModel):
                 "input": batch,
                 "encoding_format": "float",
             }
-            embs = self._request_with_retry(payload, max_retries, retry_delay)
+            embs = self._request_with_retry(
+                self._text_endpoint, payload, max_retries, retry_delay
+            )
             all_embeddings.extend(embs)
         return np.array(all_embeddings)
 
@@ -59,20 +63,25 @@ class OmniEmbedEmbedding(BaseEmbeddingModel):
         all_embeddings: list = []
         for i in tqdm(range(0, len(images), batch_size), desc="OmniEmbed image"):
             batch = images[i : i + batch_size]
-            # Each image becomes a multimodal input with base64-encoded data
-            inputs = []
+            # Build chat-format messages expected by /v1/embeddings/multimodal
+            messages_batch = []
             for img_bytes in batch:
                 b64 = base64.b64encode(img_bytes).decode("utf-8")
-                inputs.append({
-                    "type": "image_url",
-                    "image_url": {"url": f"data:image/jpeg;base64,{b64}"},
-                })
+                messages_batch.append([{
+                    "role": "user",
+                    "content": [{
+                        "type": "image",
+                        "image": f"data:image/jpeg;base64,{b64}",
+                    }],
+                }])
             payload = {
                 "model": self.model,
-                "input": inputs,
+                "input": messages_batch,
                 "encoding_format": "float",
             }
-            embs = self._request_with_retry(payload, max_retries, retry_delay)
+            embs = self._request_with_retry(
+                self._multimodal_endpoint, payload, max_retries, retry_delay
+            )
             all_embeddings.extend(embs)
         return np.array(all_embeddings)
 
@@ -91,14 +100,14 @@ class OmniEmbedEmbedding(BaseEmbeddingModel):
     # -- internals -------------------------------------------------------------
 
     def _request_with_retry(
-        self, payload: dict, max_retries: int, retry_delay: float
+        self, endpoint: str, payload: dict, max_retries: int, retry_delay: float
     ) -> List[List[float]]:
         headers = {"accept": "application/json", "Content-Type": "application/json"}
         delay = retry_delay
         for attempt in range(max_retries + 1):
             try:
                 resp = requests.post(
-                    self.endpoint, json=payload, headers=headers, timeout=60
+                    endpoint, json=payload, headers=headers, timeout=120
                 )
                 resp.raise_for_status()
                 data = resp.json()

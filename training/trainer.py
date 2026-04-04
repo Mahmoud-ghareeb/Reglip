@@ -344,6 +344,7 @@ class RegLIPTrainer(BaseTrainer):
             attention_mask=batch['attention_mask'],
             similarity_targets=batch.get('similarity_targets'),
             texts=batch.get('captions'),
+            raw_images=batch.get('raw_images'),
             return_loss=True,
         )
         

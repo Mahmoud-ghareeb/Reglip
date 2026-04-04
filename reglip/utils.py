@@ -283,51 +283,51 @@ def freeze_backbone(model, logger=None):
 
 def setup_frozen_text_encoder(
     reglip_model: RegLIPModel,
-    encoder_name: str = "qwen",
-    base_url: str = "http://212.41.29.82:6010",
-    model: str = "Qwen/Qwen3-Embedding-8B"
+    encoder_name: str = "qwen_api",
+    **kwargs,
 ) -> RegLIPModel:
     """
     Set up the frozen text encoder for similarity target generation.
-    
+
+    Uses the embedding registry for known model keys (e.g. "qwen_api",
+    "omni_embed").  Falls back to legacy paths for backward compatibility
+    ("qwen" maps to "qwen_api", anything else tries sentence-transformers).
+
     Args:
-        reglip_model: RegLIP model instance
-        encoder_name: Type of encoder ("qwen" or sentence transformer model name)
-        base_url: Base URL for Qwen API (only used if encoder_name is "qwen")
-        model: Qwen model name (only used if encoder_name is "qwen")
-        
+        reglip_model: RegLIP model instance.
+        encoder_name: Registry key (see ``reglip.embeddings.EMBEDDING_REGISTRY``)
+                      or a sentence-transformer model name for legacy support.
+        **kwargs: Forwarded to the embedding model constructor.
+
     Returns:
-        RegLIP model with frozen text encoder set up
+        RegLIP model with frozen text encoder set up.
     """
+    from .embeddings import EMBEDDING_REGISTRY, create_embedding_model
+
+    # Legacy alias: "qwen" -> "qwen_api"
+    if encoder_name == "qwen":
+        encoder_name = "qwen_api"
+
     try:
-        if encoder_name == "qwen":
-            # Use Qwen embedding client
-            from .embedding_utils import QwenEmbeddingClient
-            
-            print(f"Loading Qwen embedding client: {model}")
-            print(f"API URL: {base_url}")
-            frozen_encoder = QwenEmbeddingClient(base_url=base_url, model=model)
+        if encoder_name in EMBEDDING_REGISTRY:
+            frozen_encoder = create_embedding_model(encoder_name, **kwargs)
+            print(f"Loading frozen text encoder: {frozen_encoder.name}")
             reglip_model.set_frozen_text_encoder(frozen_encoder)
-            print("Qwen embedding client set up successfully")
-            
+            print(f"Frozen text encoder set up successfully: {frozen_encoder.name}")
         else:
-            # Use sentence transformer
+            # Fallback: treat as sentence-transformer model name
             from sentence_transformers import SentenceTransformer
-            
-            print(f"Loading frozen text encoder: {encoder_name}")
+
+            print(f"Loading sentence-transformer encoder: {encoder_name}")
             frozen_encoder = SentenceTransformer(encoder_name)
             reglip_model.set_frozen_text_encoder(frozen_encoder)
             print("Sentence transformer encoder set up successfully")
-        
+
     except ImportError as e:
-        if encoder_name == "qwen":
-            print("QwenEmbeddingClient not available. Check embedding_utils.py")
-        else:
-            print("sentence_transformers not available. Please install it for similarity target generation.")
-        print(f"Import error: {e}")
+        print(f"Import error while setting up encoder '{encoder_name}': {e}")
     except Exception as e:
         print(f"Error setting up frozen text encoder: {e}")
-    
+
     return reglip_model
 
 

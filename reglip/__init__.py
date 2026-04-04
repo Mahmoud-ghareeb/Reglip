@@ -8,21 +8,35 @@ instead of binary classification for contrastive learning.
 from .config import RegLIPConfig, RegLIPTextConfig, RegLIPVisionConfig
 from .model import RegLIPModel, RegLIPOutput
 from .utils import load_siglip_checkpoint
+from .embeddings import (
+    BaseEmbeddingModel,
+    QwenAPIEmbedding,
+    OmniEmbedEmbedding,
+    create_embedding_model,
+    EMBEDDING_REGISTRY,
+)
 from .embedding_utils import (
-    QwenEmbeddingClient,
+    QwenEmbeddingClient,  # legacy alias for QwenAPIEmbedding
     compute_similarity_matrix,
     get_most_similar_labels,
-    batch_embedding_pipeline
+    batch_embedding_pipeline,
 )
 
 __version__ = "0.1.0"
 __all__ = [
     "RegLIPConfig",
-    "RegLIPTextConfig", 
+    "RegLIPTextConfig",
     "RegLIPVisionConfig",
     "RegLIPModel",
     "RegLIPOutput",
     "load_siglip_checkpoint",
+    # Embeddings
+    "BaseEmbeddingModel",
+    "QwenAPIEmbedding",
+    "OmniEmbedEmbedding",
+    "create_embedding_model",
+    "EMBEDDING_REGISTRY",
+    # Legacy / utilities
     "QwenEmbeddingClient",
     "compute_similarity_matrix",
     "get_most_similar_labels",

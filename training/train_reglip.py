@@ -12,6 +12,22 @@ from training.trainer import RegLIPTrainer
 from training.utils import load_config, setup_logging, create_optimizer_and_scheduler, set_seed
 
 
+def _setup_encoder_from_config(model, config):
+    """Set up the frozen text encoder from the YAML config."""
+    reglip_cfg = config['model']['reglip_config']
+    encoder_name = reglip_cfg['frozen_text_encoder']
+    encoder_kwargs = reglip_cfg.get('encoder_kwargs', {})
+
+    # Legacy Qwen config keys -> new kwargs
+    if encoder_name in ("qwen", "qwen_api") and not encoder_kwargs:
+        encoder_kwargs = {
+            "base_url": reglip_cfg.get("qwen_api_url", "http://212.41.29.82:6010"),
+            "model": reglip_cfg.get("qwen_model", "Qwen/Qwen3-Embedding-8B"),
+        }
+
+    setup_frozen_text_encoder(model, encoder_name=encoder_name, **encoder_kwargs)
+
+
 def create_model(config):
     """Create RegLIP model."""
     model_name = config['model']['pretrained_model']
@@ -21,23 +37,12 @@ def create_model(config):
         model, reglip_config = load_from_transformers_siglip(model_name)
         
         # Set up frozen text encoder for similarity generation
-        frozen_encoder_name = config['model']['reglip_config']['frozen_text_encoder']
-        if frozen_encoder_name == "qwen":
-            # Use Qwen with configuration parameters
-            setup_frozen_text_encoder(
-                model, 
-                encoder_name=frozen_encoder_name,
-                base_url=config['model']['reglip_config']['qwen_api_url'],
-                model=config['model']['reglip_config']['qwen_model']
-            )
-        else:
-            # Use sentence transformer
-            setup_frozen_text_encoder(model, frozen_encoder_name)
+        _setup_encoder_from_config(model, config)
     else:
         # Create from scratch
         text_config = config['model']['reglip_config']['text_config']
         vision_config = config['model']['reglip_config']['vision_config']
-        
+
         reglip_config = RegLIPConfig(
             text_config=text_config,
             vision_config=vision_config,
@@ -45,22 +50,11 @@ def create_model(config):
             logit_scale_init_value=config['model']['reglip_config']['logit_scale_init_value'],
             logit_bias_init_value=config['model']['reglip_config']['logit_bias_init_value'],
         )
-        
+
         model = RegLIPModel(reglip_config)
-        
+
         # Set up frozen text encoder for similarity generation
-        frozen_encoder_name = config['model']['reglip_config']['frozen_text_encoder']
-        if frozen_encoder_name == "qwen":
-            # Use Qwen with configuration parameters
-            setup_frozen_text_encoder(
-                model, 
-                encoder_name=frozen_encoder_name,
-                base_url=config['model']['reglip_config']['qwen_api_url'],
-                model=config['model']['reglip_config']['qwen_model']
-            )
-        else:
-            # Use sentence transformer
-            setup_frozen_text_encoder(model, frozen_encoder_name)
+        _setup_encoder_from_config(model, config)
     
     if config['model'].get('freeze_backbone', False):
         from reglip.utils import freeze_backbone

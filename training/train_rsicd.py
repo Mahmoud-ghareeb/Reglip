@@ -43,6 +43,10 @@ def create_collate_fn(tokenizer, similarity_generator=None, use_regression_targe
             "captions": captions,
         }
 
+        # Pass raw image bytes for cross-modal teacher embeddings
+        if "raw_image_bytes" in batch[0]:
+            result["raw_images"] = [item["raw_image_bytes"] for item in batch]
+
         # Generate regression targets if needed
         if use_regression_targets and similarity_generator is not None:
             similarity_matrix = similarity_generator(captions)
@@ -64,16 +68,17 @@ def create_model(config, device):
     # Set up frozen text encoder for RegLIP
     if loss_type == "reglip_regression":
         reglip_cfg = config["model"]["reglip_config"]
-        frozen_encoder_name = reglip_cfg["frozen_text_encoder"]
-        if frozen_encoder_name == "qwen":
-            setup_frozen_text_encoder(
-                model,
-                encoder_name=frozen_encoder_name,
-                base_url=reglip_cfg["qwen_api_url"],
-                model=reglip_cfg["qwen_model"],
-            )
-        else:
-            setup_frozen_text_encoder(model, frozen_encoder_name)
+        encoder_name = reglip_cfg["frozen_text_encoder"]
+        encoder_kwargs = reglip_cfg.get("encoder_kwargs", {})
+
+        # Legacy Qwen config keys -> new kwargs
+        if encoder_name in ("qwen", "qwen_api") and not encoder_kwargs:
+            encoder_kwargs = {
+                "base_url": reglip_cfg.get("qwen_api_url", "http://212.41.29.82:6010"),
+                "model": reglip_cfg.get("qwen_model", "Qwen/Qwen3-Embedding-8B"),
+            }
+
+        setup_frozen_text_encoder(model, encoder_name=encoder_name, **encoder_kwargs)
 
     # Freeze backbone if configured
     if config["model"].get("freeze_backbone", False):

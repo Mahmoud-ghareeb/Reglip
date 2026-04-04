@@ -72,19 +72,27 @@ class RegLIPModel(nn.Module):
         self.frozen_text_encoder = None
     
     def set_frozen_text_encoder(self, frozen_encoder):
-        """Set the frozen text encoder for similarity target generation."""
-        # Support both sentence transformers and Qwen embedding client
-        if hasattr(frozen_encoder, 'encode'):
-            # Sentence transformer model
+        """Set the frozen text encoder for similarity target generation.
+
+        Accepts any BaseEmbeddingModel instance (new unified interface),
+        as well as legacy sentence-transformer or QwenEmbeddingClient objects.
+        """
+        from .embeddings.base import BaseEmbeddingModel
+
+        if isinstance(frozen_encoder, BaseEmbeddingModel):
+            self.frozen_text_encoder = frozen_encoder
+            self.encoder_type = 'embedding_model'
+        elif hasattr(frozen_encoder, 'encode'):
+            # Legacy: sentence transformer model
             self.frozen_text_encoder = frozen_encoder
             self.encoder_type = 'sentence_transformer'
         elif hasattr(frozen_encoder, 'get_embeddings'):
-            # Qwen embedding client
+            # Legacy: old QwenEmbeddingClient
             self.frozen_text_encoder = frozen_encoder
             self.encoder_type = 'qwen_client'
         else:
-            raise ValueError("Encoder must be either a sentence transformer model or QwenEmbeddingClient")
-        
+            raise ValueError("Encoder must be a BaseEmbeddingModel, sentence transformer, or QwenEmbeddingClient")
+
         # Freeze all parameters (only applies to sentence transformers)
         if hasattr(self.frozen_text_encoder, 'parameters'):
             for param in self.frozen_text_encoder.parameters():
@@ -126,51 +134,67 @@ class RegLIPModel(nn.Module):
         
         return vision_outputs[1]  # pooled output
     
-    def generate_similarity_targets(self, texts: list) -> torch.FloatTensor:
+    def generate_similarity_targets(
+        self, texts: list, images: list = None,
+    ) -> torch.FloatTensor:
         """
-        Generate continuous similarity targets using the frozen text encoder.
-        Supports both sentence transformers and Qwen embedding client.
-        
+        Generate continuous similarity targets using the frozen encoder.
+
+        If the encoder supports images and ``images`` is provided, produces
+        **cross-modal** targets (image-text cosine similarity).  Otherwise
+        falls back to **text-text** similarity.
+
         Args:
-            texts: List of text strings
-            
+            texts: List of text strings.
+            images: Optional list of raw image bytes (JPEG/PNG).  Only used
+                    when the frozen encoder supports image embeddings.
+
         Returns:
-            Similarity matrix with values between 0 and 1
+            Similarity matrix with values between 0 and 1,
+            shape ``(batch, batch)``.
         """
         if self.frozen_text_encoder is None:
             raise ValueError("Frozen text encoder not set. Call set_frozen_text_encoder() first.")
-        
+
         device = next(self.parameters()).device
-        
-        # Encode texts using frozen encoder
-        if self.encoder_type == 'sentence_transformer':
-            # Use sentence transformer API
+
+        # --- Encode texts ------------------------------------------------
+        if self.encoder_type == 'embedding_model':
+            text_emb_np = self.frozen_text_encoder.get_embeddings(texts, batch_size=32)
+            text_embeddings = torch.from_numpy(text_emb_np).to(device)
+        elif self.encoder_type == 'sentence_transformer':
             with torch.no_grad():
-                embeddings = self.frozen_text_encoder.encode(
-                    texts, 
-                    convert_to_tensor=True,
-                    device=device
+                text_embeddings = self.frozen_text_encoder.encode(
+                    texts, convert_to_tensor=True, device=device,
                 )
         elif self.encoder_type == 'qwen_client':
-            # Use Qwen embedding client
-            embeddings_np = self.frozen_text_encoder.get_embeddings(
-                texts,
-                batch_size=32  # Use reasonable batch size
-            )
-            # Convert to tensor and move to device
-            embeddings = torch.from_numpy(embeddings_np).to(device)
+            text_emb_np = self.frozen_text_encoder.get_embeddings(texts, batch_size=32)
+            text_embeddings = torch.from_numpy(text_emb_np).to(device)
         else:
             raise ValueError(f"Unsupported encoder type: {self.encoder_type}")
-        
-        # Normalize embeddings
-        embeddings = F.normalize(embeddings, p=2, dim=1)
-        
-        # Compute cosine similarity matrix
-        similarity_matrix = torch.matmul(embeddings, embeddings.t())
-        
-        # Scale to [0, 1] range (cosine similarity is in [-1, 1])
+
+        text_embeddings = F.normalize(text_embeddings, p=2, dim=1)
+
+        # --- Cross-modal targets (image-text) if encoder supports it -----
+        use_cross_modal = (
+            images is not None
+            and self.encoder_type == 'embedding_model'
+            and self.frozen_text_encoder.supports_images
+        )
+
+        if use_cross_modal:
+            img_emb_np = self.frozen_text_encoder.get_image_embeddings(images, batch_size=8)
+            image_embeddings = torch.from_numpy(img_emb_np).to(device)
+            image_embeddings = F.normalize(image_embeddings, p=2, dim=1)
+            # Cross-modal similarity: each row i = similarity of image_i to all texts
+            similarity_matrix = torch.matmul(image_embeddings, text_embeddings.t())
+        else:
+            # Text-text similarity (original behaviour)
+            similarity_matrix = torch.matmul(text_embeddings, text_embeddings.t())
+
+        # Scale from [-1, 1] to [0, 1]
         similarity_matrix = (similarity_matrix + 1) / 2
-        
+
         return similarity_matrix
     
     def binary_contrastive_loss(
@@ -248,6 +272,7 @@ class RegLIPModel(nn.Module):
         position_ids: Optional[torch.LongTensor] = None,
         return_loss: Optional[bool] = None,
         texts: Optional[list] = None,
+        raw_images: Optional[list] = None,
         similarity_targets: Optional[torch.FloatTensor] = None,
         use_regression_loss: bool = True,
         output_attentions: Optional[bool] = None,
@@ -264,6 +289,7 @@ class RegLIPModel(nn.Module):
             position_ids: Text position ids
             return_loss: Whether to compute loss
             texts: List of text strings for similarity target generation
+            raw_images: Optional list of raw image bytes for cross-modal targets
             similarity_targets: Pre-computed similarity targets
             use_regression_loss: Whether to use regression or binary loss
             output_attentions: Whether to output attention weights
@@ -315,7 +341,7 @@ class RegLIPModel(nn.Module):
             if use_regression_loss:
                 # Generate similarity targets if not provided
                 if similarity_targets is None and texts is not None:
-                    similarity_targets = self.generate_similarity_targets(texts)
+                    similarity_targets = self.generate_similarity_targets(texts, images=raw_images)
                 
                 if similarity_targets is not None:
                     # Use raw cosine similarity (embeddings) for regression loss

@@ -49,6 +49,12 @@ def _bytes_to_image(byte_array_str: str) -> Image.Image:
     return Image.open(io.BytesIO(data["bytes"])).convert("RGB")
 
 
+def _raw_image_bytes(byte_array_str: str) -> bytes:
+    """Extract raw image bytes from the CSV byte array string."""
+    data = ast.literal_eval(byte_array_str)
+    return bytes(data["bytes"])
+
+
 def _parse_captions(captions_str: str) -> List[str]:
     """Parse the captions column into a list of strings."""
     cleaned = captions_str.replace("[", "").replace("]", "")
@@ -299,10 +305,15 @@ class RSICDTrainingDataset(torch.utils.data.Dataset):
             ])
             pixel_values = transform(image)
 
-        return {
+        result = {
             "pixel_values": pixel_values,
             "caption": caption,
         }
+
+        # Include raw image bytes for cross-modal teacher embeddings
+        result["raw_image_bytes"] = _raw_image_bytes(row["image"])
+
+        return result
 
 
 def _filename_to_category(filename: str) -> Optional[str]:

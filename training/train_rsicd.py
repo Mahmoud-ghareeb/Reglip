@@ -167,22 +167,11 @@ def main():
     processor = SiglipProcessor.from_pretrained(config["model"]["pretrained_model"])
     tokenizer = processor.tokenizer
 
-    # Create similarity generator for RegLIP
-    similarity_generator = None
-    use_regression = config["data"].get("use_regression_targets", False)
-
-    if use_regression:
-        from data.preprocessing import SimilarityTargetGenerator
-        reglip_cfg = config["model"]["reglip_config"]
-        similarity_generator = SimilarityTargetGenerator(
-            frozen_encoder_name=reglip_cfg["qwen_api_url"]
-        )
-
     # Create collate function
+    # Note: similarity targets are generated online in the model's forward pass
+    # via generate_similarity_targets(), not in the collate function.
     collate_fn = create_collate_fn(
         tokenizer=tokenizer,
-        similarity_generator=similarity_generator,
-        use_regression_targets=use_regression,
         max_length=config["data"].get("max_text_length", 64),
     )
 
